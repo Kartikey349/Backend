@@ -1,6 +1,8 @@
 const {MongoClient} = require("mongodb")
+require('dotenv').config();
 
-const url = "mongodb+srv://kartikey349:gLvL0uWEJDaVpMYX@namastenode.6d8emxm.mongodb.net/";
+
+const url = process.env.DB_URL;
 
 const client = new MongoClient(url);
 
@@ -19,11 +21,31 @@ async function main(){
         country: 'India'
     }
 
-    const insertData = await collection.insertMany([data]);
-    console.log("inserted data => ", insertData)
+
+    //delete a document
+    // const deletedData = await collection.deleteOne(data);
+    // console.log("deleted data => ", deletedData);
+
+
+    //insert a data
+    // const insertData = await collection.insertMany([data]);
+    // console.log("inserted data => ", insertData)
+
+
+    //Updating a field or doc
+    // const update = {$set: {firstname:"Shubh", address: "3 Nassau St"}}
+    // const updated = await collection.updateOne(data, update)
+    // console.log("updated => ", updated);
 
     const findResult = await collection.find({}).toArray();
     console.log("found documents =>", findResult);
+
+
+    // const result = await collection.find({firstname: "Kartikey"}).count();
+    // console.log("result => ", result)
+
+    // const count = await collection.countDocuments({firstname: "Kartikey"});
+    // console.log("count => ", count);
 
 
     return "done";

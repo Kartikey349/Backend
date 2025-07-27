@@ -16,36 +16,40 @@ const app = express();
 //  /a/ - regex => anyroute containing 'a' will get result
 // /.*fly$/ => any route ending with 'fly'
 
-app.use("/signup", (req, res,next) => {
-    const token = "xo"
-    const is_authorised = token === "xo";
 
-    if(is_authorised){
-        next();
-    }else{
-        res.status(501).send("unauthorised access");
-    }
-})
+
+// app.use("/signup", (req, res,next) => {
+//     const token = "xo"
+//     const is_authorised = token === "xo";
+
+//     if(is_authorised){
+//         next();
+//     }else{
+//         res.status(501).send("unauthorised access");
+//     }
+// })
+
+
+app.use(express.json())
 
 app.post("/signup", async (req,res) => {
-    const userInfo = {
-        firstName: "sarvan",
-        lastName: "tesfaye",
-        emailId: "thesarvan@gmail.com",
-        password: "thotho",
-        age: 31
-    }
-
+    const userInfo = req.body;
+    const user = new User(userInfo);//creating a new instance of the User model
 
     //always use error handling while interacting with database
     try{
-        const user = new User(userInfo);
         await user.save();
         res.send("succesfully added to the database");
     }catch(err){
         res.status(400).send("error saving the user");
     }
 })
+
+
+// app.post("/signup", (req,res) => {
+//     console.log(req.body)
+//     res.send("successfully saved the data");
+// })
 
 
 

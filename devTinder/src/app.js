@@ -1,6 +1,7 @@
 const express = require("express");
 const connectDb =  require("./config/database")
-const User = require("./models/user")
+const User = require("./models/user");
+const { ReturnDocument } = require("mongodb");
 
 const app = express();
 
@@ -17,6 +18,8 @@ const app = express();
 // /.*fly$/ => any route ending with 'fly'
 
 
+app.use(express.json())//middleware
+
 
 // app.use("/signup", (req, res,next) => {
 //     const token = "xo"
@@ -30,27 +33,116 @@ const app = express();
 // })
 
 
-app.use(express.json())
-
-app.post("/signup", async (req,res) => {
-    const userInfo = req.body;
-    const user = new User(userInfo);//creating a new instance of the User model
-
-    //always use error handling while interacting with database
-    try{
-        await user.save();
-        res.send("succesfully added to the database");
-    }catch(err){
-        res.status(400).send("error saving the user");
-    }
-})
-
-
 // app.post("/signup", (req,res) => {
 //     console.log(req.body)
 //     res.send("successfully saved the data");
 // })
 
+
+
+//fetching one user with same emailId
+app.get("/user", async (req, res) => {
+    const userEmail = req.body.emailId;
+
+    try{
+        const user = await User.findOne({emailId : userEmail})
+        if(user.length === 0){
+            res.status(404).send("user not found");
+        }else{
+            res.send(user)
+        }
+
+    }catch(err){
+        res.status(400).send("something went wrong")
+    }
+})
+
+
+//fetching all users
+app.get("/users", async (req,res) =>{
+    try{
+        const users = await User.find({});
+        res.send(users);
+ 
+    }catch(err){
+        res.status(400).send("something went wrong")
+    }
+})
+
+
+
+//adding document to the DB dynamically 
+app.post("/signup", async (req, res) => {
+    const userInfo = req.body;
+    try{
+        const user = await User(userInfo);
+        user.save();
+        res.send("successfully added to the DB")
+    }catch(err){
+        res.status(400).send("something went wrong")
+    }
+})
+
+
+
+
+
+//fetching document by Id
+app.get("/userId", async (req,res) => {
+    const userId = req.body;
+
+    try{
+        const user = await User.findById(userId)
+        if(user.length === 0){
+            res.status(403).send("user not found")
+        }else{
+            res.send(user);
+        }
+
+    }catch(err){
+        res.status(400).send("something went wrong")
+    }
+})
+
+
+
+//delete document by Id
+app.delete("/user", async (req,res) => {
+    const userId = req.body;
+    try{
+        const user = await User.findByIdAndDelete(userId);
+        console.log(user);
+        res.send("deleted from the DB");
+    }catch(err){
+        res.status(400).send("soomething went wrong")
+    }
+})
+
+
+//update the document by Id
+app.patch("/user", async (req,res) => {
+
+    const userId = req.body.userId
+    const update = req.body;
+    try{
+        await User.findByIdAndUpdate(userId, update)
+        res.send("succesfully updated")
+    }catch(err){
+        res.status(400).send("soomething went wrong")
+    }
+})
+
+app.patch("/user", async (req, res) => {
+    const emailId = req.body.emailId;
+    const update = req.body
+
+    try {
+        await User.findOneAndUpdate({ emailId: emailId }, update)
+        res.send("succesfully updated the document")
+    } catch (error) {
+         res.status(400).send("soomething went wrong")
+    }
+})
 
 
 

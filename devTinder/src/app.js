@@ -1,7 +1,6 @@
 const express = require("express");
 const connectDb =  require("./config/database")
 const User = require("./models/user");
-const { ReturnDocument } = require("mongodb");
 
 const app = express();
 
@@ -74,12 +73,12 @@ app.get("/users", async (req,res) =>{
 //adding document to the DB dynamically 
 app.post("/signup", async (req, res) => {
     const userInfo = req.body;
+    const user = new User(userInfo);
     try{
-        const user = await User(userInfo);
-        user.save();
+        await user.save();
         res.send("successfully added to the DB")
     }catch(err){
-        res.status(400).send("something went wrong")
+        res.status(400).send("something went wrong " + err.message)
     }
 })
 
@@ -120,27 +119,35 @@ app.delete("/user", async (req,res) => {
 
 
 //update the document by Id
-app.patch("/user", async (req,res) => {
+// app.patch("/user", async (req,res) => {
 
-    const userId = req.body.userId
-    const update = req.body;
-    try{
-        await User.findByIdAndUpdate(userId, update)
-        res.send("succesfully updated")
-    }catch(err){
-        res.status(400).send("soomething went wrong")
-    }
-})
+//     const userId = req.body.userId
+//     const update = req.body;
+//     try{
+//         await User.findByIdAndUpdate(userId, update, {
+//             returnDocument : "after",
+//             runValidators: "true"
+//         })
+//         res.send("succesfully updated")
+//     }catch(err){
+//         res.status(400).send("update failed " +  err.message)
+//     }
+// })
 
+
+//update the document by email
 app.patch("/user", async (req, res) => {
     const emailId = req.body.emailId;
     const update = req.body
 
     try {
-        await User.findOneAndUpdate({ emailId: emailId }, update)
+        await User.findOneAndUpdate({ emailId: emailId }, update, {
+            returnDocument : "after",
+            runValidators: "true"
+        })
         res.send("succesfully updated the document")
     } catch (error) {
-         res.status(400).send("soomething went wrong")
+         res.status(400).send("soomething went wrong " + error.message)
     }
 })
 

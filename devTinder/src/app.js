@@ -58,7 +58,7 @@ app.get("/user", async (req, res) => {
 
 
 //fetching all users
-app.get("/users", async (req,res) =>{
+app.get("/user", async (req,res) =>{
     try{
         const users = await User.find({});
         res.send(users);
@@ -87,7 +87,7 @@ app.post("/signup", async (req, res) => {
 
 
 //fetching document by Id
-app.get("/userId", async (req,res) => {
+app.get("/user", async (req,res) => {
     const userId = req.body;
 
     try{
@@ -119,20 +119,28 @@ app.delete("/user", async (req,res) => {
 
 
 //update the document by Id
-// app.patch("/user", async (req,res) => {
+app.patch("/user/:id", async (req,res) => {
 
-//     const userId = req.body.userId
-//     const update = req.body;
-//     try{
-//         await User.findByIdAndUpdate(userId, update, {
-//             returnDocument : "after",
-//             runValidators: "true"
-//         })
-//         res.send("succesfully updated")
-//     }catch(err){
-//         res.status(400).send("update failed " +  err.message)
-//     }
-// })
+    const userId = req.params.id
+    const update = req.body;
+    try{
+
+        const IS_ALLOWED = ["lastName", "password", "skills", "about"];
+        const updateAllowed = Object.keys(update).every((e) => IS_ALLOWED.includes(e));
+
+        if(!updateAllowed){
+            throw new Error("update failed")
+        }
+
+        await User.findByIdAndUpdate(userId, update, {
+            returnDocument : "after",
+            runValidators: "true"
+        })
+        res.send("succesfully updated")
+    }catch(err){
+        res.status(400).send("update failed " +  err.message)
+    }
+})
 
 
 //update the document by email

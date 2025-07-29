@@ -90,16 +90,18 @@ app.post("/login", async (req,res) => {
         if(!user){
             throw new Error("invalid credentials")
         }
-        const passwordValid = bcrypt.compare(password, user.password);
+        const passwordValid = await bcrypt.compare(password, user.password);
 
         if(passwordValid){
             //create a token
-            const token = jwt.sign({_id: user._id}, process.env.TOKEN_KEY)
+            const token = user.getJwt();
 
             //add the token to cookie and send the response to the user
             res.cookie("token", token)
 
             res.send("login succesfull")
+        }else{
+            throw new Error("wrong password")
         }
             
 
@@ -127,6 +129,9 @@ app.post("/sendConnectionRequest",userAuth, async (req,res) => {
 
     res.send("connection request sent by " + user.firstName)
 })
+
+
+
 
 // app.use("/signup", (req, res,next) => {
 //     const token = "xo"

@@ -2,6 +2,7 @@ const express = require("express");
 const connectDb =  require("./config/database")
 const User = require("./models/user");
 const {validationSignup} = require("./utils/validation")
+const bcrypt = require("bcrypt")
 
 const app = express();
 
@@ -19,6 +20,81 @@ const app = express();
 
 
 app.use(express.json())//middleware
+
+// app.use("/signup", async (req,res,next) => {
+//     const emailId = req.body.emailId
+//     try{
+//         const user = await User.findOne({emailId: emailId })
+//         if(user){
+//             throw new Error
+//         }else{
+//             next()
+//         }
+        
+//     }catch(err){
+//         res.status(501).send("Email already exist")
+//     }
+// })
+
+
+
+
+
+//adding document to the DB dynamically 
+app.post("/signup", async (req, res) => {
+    const {
+        firstName,
+        lastName,
+        emailId,
+        password,
+        skills
+    } = req.body;
+   
+    try{
+        //validation of data
+        validationSignup(req)
+
+        //Encrypt the password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const user = new User({
+            firstName,
+            lastName,
+            emailId,
+            password: hashedPassword,
+            skills
+        });
+        await user.save();
+        res.send("successfully added to the DB")
+    }catch(err){
+        res.status(400).send("ERROR: " + err.message)
+    }
+})
+
+
+//Login api
+app.post("/login", async (req,res) => {
+    const {
+        emailId,
+        password
+    } = req.body;
+
+    try{
+        const user = await User.findOne({emailId : emailId});
+        if(!user){
+            throw new Error
+        }
+        const passwordValid = bcrypt.compare(password, user.password);
+
+        if(passwordValid){
+            res.send("login succesfull")
+        }
+            
+
+    }catch(err){
+        res.status(400).send("invalid credentials")
+    }
+})
 
 
 // app.use("/signup", (req, res,next) => {
@@ -70,40 +146,6 @@ app.get("/user", async (req,res) =>{
 })
 
 
-app.use("/signup", async (req,res,next) => {
-    const emailId = req.body.emailId
-    try{
-        const user = await User.findOne({emailId: emailId })
-        if(user){
-            throw new Error
-        }else{
-            next()
-        }
-        
-    }catch(err){
-        res.status(501).send("Email already exist")
-    }
-})
-
-
-//adding document to the DB dynamically 
-app.post("/signup", async (req, res) => {
-    const userInfo = req.body;
-   
-    try{
-        validationSignup(req)
-
-        const user = new User(userInfo);
-        await user.save();
-        res.send("successfully added to the DB")
-    }catch(err){
-        res.status(400).send("ERROR: " + err.message)
-    }
-})
-
-
-
-
 
 //fetching document by Id
 app.get("/user", async (req,res) => {
@@ -142,7 +184,6 @@ app.patch("/user/:id", async (req,res) => {
     const userId = req.params.id
     const update = req.body;
     try{
-
         const IS_ALLOWED = ["lastName", "password", "skills", "about"];
         const updateAllowed = Object.keys(update).every((e) => IS_ALLOWED.includes(e));
 

@@ -6,6 +6,7 @@ const {validationSignup} = require("./utils/validation")
 const bcrypt = require("bcrypt")
 const cookieParser = require("cookie-parser")
 const jwt = require("jsonwebtoken")
+const {userAuth} = require("./middleware/auth")
 
 const app = express();
 
@@ -109,29 +110,22 @@ app.post("/login", async (req,res) => {
 
 
 //use of jwt and cookies
-app.get("/profile", async(req, res) => {
-       
+app.get("/profile", userAuth , async(req, res) => {
     try{
-        //get the cookie fromt the client
-        const cookie = req.cookies;
-        
-        //extract the token from cookie
-        const {token} = cookie;
+        const user = req.user;
 
-        if(!token){
-            throw new Error("invalid token")
-        }
-
-        //validate my token
-        const decoded = jwt.verify(token, process.env.TOKEN_KEY)
-        const {_id} = decoded;
-
-        const user = await User.findById(_id)
-
-        res.send(user)
+        res.send(user);
     }catch(err){
         res.status(500).send("ERROR: " + err.message)
     }
+})
+
+
+//api to send connection request
+app.post("/sendConnectionRequest",userAuth, async (req,res) => {
+    const user = req.user;
+
+    res.send("connection request sent by " + user.firstName)
 })
 
 // app.use("/signup", (req, res,next) => {

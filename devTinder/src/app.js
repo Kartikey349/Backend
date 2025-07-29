@@ -1,6 +1,7 @@
 const express = require("express");
 const connectDb =  require("./config/database")
 const User = require("./models/user");
+const {validationSignup} = require("./utils/validation")
 
 const app = express();
 
@@ -69,16 +70,34 @@ app.get("/user", async (req,res) =>{
 })
 
 
+app.use("/signup", async (req,res,next) => {
+    const emailId = req.body.emailId
+    try{
+        const user = await User.findOne({emailId: emailId })
+        if(user){
+            throw new Error
+        }else{
+            next()
+        }
+        
+    }catch(err){
+        res.status(501).send("Email already exist")
+    }
+})
+
 
 //adding document to the DB dynamically 
 app.post("/signup", async (req, res) => {
     const userInfo = req.body;
-    const user = new User(userInfo);
+   
     try{
+        validationSignup(req)
+
+        const user = new User(userInfo);
         await user.save();
         res.send("successfully added to the DB")
     }catch(err){
-        res.status(400).send("something went wrong " + err.message)
+        res.status(400).send("ERROR: " + err.message)
     }
 })
 
@@ -102,7 +121,6 @@ app.get("/user", async (req,res) => {
         res.status(400).send("something went wrong")
     }
 })
-
 
 
 //delete document by Id

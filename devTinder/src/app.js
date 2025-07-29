@@ -1,10 +1,14 @@
 const express = require("express");
+require('dotenv').config();
 const connectDb =  require("./config/database")
 const User = require("./models/user");
 const {validationSignup} = require("./utils/validation")
 const bcrypt = require("bcrypt")
+const cookieParser = require("cookie-parser")
+const jwt = require("jsonwebtoken")
 
 const app = express();
+
 
 // app.get("/user/:userId/:name", (req,res) => {
 //     //console.log(req.query) --- for query param like /user?userId=101
@@ -20,6 +24,7 @@ const app = express();
 
 
 app.use(express.json())//middleware
+app.use(cookieParser());
 
 // app.use("/signup", async (req,res,next) => {
 //     const emailId = req.body.emailId
@@ -82,20 +87,52 @@ app.post("/login", async (req,res) => {
     try{
         const user = await User.findOne({emailId : emailId});
         if(!user){
-            throw new Error
+            throw new Error("invalid credentials")
         }
         const passwordValid = bcrypt.compare(password, user.password);
 
         if(passwordValid){
+            //create a token
+            const token = jwt.sign({_id: user._id}, process.env.TOKEN_KEY)
+
+            //add the token to cookie and send the response to the user
+            res.cookie("token", token)
+
             res.send("login succesfull")
         }
             
 
     }catch(err){
-        res.status(400).send("invalid credentials")
+        res.status(400).send("something went wrong " + err.message)
     }
 })
 
+
+//use of jwt and cookies
+app.get("/profile", async(req, res) => {
+       
+    try{
+        //get the cookie fromt the client
+        const cookie = req.cookies;
+        
+        //extract the token from cookie
+        const {token} = cookie;
+
+        if(!token){
+            throw new Error("invalid token")
+        }
+
+        //validate my token
+        const decoded = jwt.verify(token, process.env.TOKEN_KEY)
+        const {_id} = decoded;
+
+        const user = await User.findById(_id)
+
+        res.send(user)
+    }catch(err){
+        res.status(500).send("ERROR: " + err.message)
+    }
+})
 
 // app.use("/signup", (req, res,next) => {
 //     const token = "xo"

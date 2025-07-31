@@ -5,13 +5,6 @@ const {userAuth} = require("../middleware/auth")
 const ConnectionRequest = require("../models/connectionRequest");
 const User = require("../models/user");
 
-//api to send connection request
-connectionRouter.post("/sendConnectionRequest",userAuth, async (req,res) => {
-    const user = req.user;
-
-    res.send("connection request sent by " + user.firstName)
-})
-
 
 connectionRouter.post("/request/send/:status/:userId", userAuth, async (req, res) => {
 
@@ -37,7 +30,7 @@ connectionRouter.post("/request/send/:status/:userId", userAuth, async (req, res
         if(!toUser){
             throw new Error("User not found")
         }
-        
+
 
         //check whether existing connection request
         const validate = await ConnectionRequest.findOne({
@@ -73,3 +66,38 @@ connectionRouter.post("/request/send/:status/:userId", userAuth, async (req, res
     }
 })
 module.exports = connectionRouter;
+
+connectionRouter.post("/request/review/:status/:requestId", userAuth, async(req, res) => {
+    try{
+        const loggedInUser = req.user;
+        const status = req.params.status
+        const requestId = req.params.requestId
+
+        const isAllowed = ["accepted", "rejected"].includes(status);
+        if(!isAllowed){
+            throw new Error("invalid status type: " + status)
+        }
+
+        const connectionRequest = await ConnectionRequest.findOne(
+            {
+                _id: requestId,
+                toUserId: loggedInUser._id,
+                status: "interested"
+            }
+        )
+
+        if(!connectionRequest){
+            throw new Error("Connection request not found")
+        }
+
+        connectionRequest.status = status;
+        const data = await connectionRequest.save()
+        res.json({
+            message:`connection request is successfully ${status}`,
+            data,
+        })
+
+    }catch(err){
+        res.status(400).send("ERROR: " + err.message)
+    }
+})

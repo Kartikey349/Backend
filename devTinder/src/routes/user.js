@@ -63,6 +63,10 @@ userRouter.get("/user/connection", userAuth, async(req,res) => {
 
 userRouter.get("/user/feed", userAuth, async(req, res)=> {
     const loggedInUser = req.user;
+    const page = parseInt(req.query.page || 1)
+    let limit = parseInt(req.query.limit || 10);
+    limit = limit > 50 ? 50 : limit;
+    const skip = (page - 1) * limit;
 
     try{
         const connectionRequest = await ConnectionRequest.find({
@@ -76,7 +80,7 @@ userRouter.get("/user/feed", userAuth, async(req, res)=> {
         }).select("fromUserId toUserId")
 
         const hideFromFeed = new Set();
-        connectionRequest.map((req) => {
+        connectionRequest.forEach((req) => {
             hideFromFeed.add(req.fromUserId.toString());
             hideFromFeed.add(req.toUserId.toString());
         })
@@ -91,6 +95,8 @@ userRouter.get("/user/feed", userAuth, async(req, res)=> {
                 }
             ]
         }).select("firstName lastName age about gender")
+        .skip(skip)
+        .limit(limit);
 
         res.send(users)
     }catch(err){
